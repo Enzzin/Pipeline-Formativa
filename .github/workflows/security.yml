@@ -41,9 +41,6 @@ jobs:
             --sarif \
             --output semgrep-results.sarif \
             --verbose
-        # --config auto   → Semgrep detecta a linguagem e aplica regras da comunidade
-        # --config <path> → aplica sua regra customizada em cima
-        # --sarif         → gera saída no formato SARIF (padrão de segurança)
 
       - name: "Publicar resultados na aba Security do GitHub"
         uses: github/codeql-action/upload-sarif@v3
@@ -75,14 +72,10 @@ jobs:
         uses: fossas/fossa-action@v1
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
-          # O FOSSA detecta automaticamente: requirements.txt, Pipfile,
-          # pyproject.toml, setup.py, etc.
 
       - name: "Verificar compliance de licenças e vulnerabilidades"
         uses: fossas/fossa-action@v1
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
           run-tests: true
-          # run-tests: true → executa `fossa test`, que consulta
-          # as políticas configuradas na sua conta FOSSA e falha
-          # o job se alguma violação for encontrada
+
