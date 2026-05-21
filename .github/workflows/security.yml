@@ -2,13 +2,15 @@
 name: Security Pipeline (SAST + SCA)
 
 on:
+  workflow_dispatch: {}
+  pull_request: {}
   push:
     branches:
       - main
       - master
       - develop
-  pull_request:
-  workflow_dispatch:
+  schedule:
+    - cron: '12 15 * * *'
 
 permissions:
   contents: read
@@ -24,18 +26,16 @@ jobs:
     name: "SAST — Semgrep"
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
-
     container:
       image: semgrep/semgrep
-
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     steps:
       - name: "Checkout do código"
         uses: actions/checkout@v4
 
-      - name: "Rodar Semgrep CI (envia para semgrep.dev + regra customizada)"
+      - name: "Rodar Semgrep CI"
         run: semgrep ci --config .semgrep/rules/python-logging.yml
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   # ─────────────────────────────────────────────
   # JOB 2 — SCA com FOSSA
@@ -43,7 +43,6 @@ jobs:
   sca-fossa:
     name: "SCA — FOSSA"
     runs-on: ubuntu-latest
-
     steps:
       - name: "Checkout do código"
         uses: actions/checkout@v4
