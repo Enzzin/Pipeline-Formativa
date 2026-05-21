@@ -1,1 +1,88 @@
 
+# .github/workflows/security.yml
+name: Security Pipeline (SAST + SCA)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+  workflow_dispatch:  # permite rodar manualmente pela UI do GitHub
+
+permissions:
+  contents: read
+  security-events: write   # necessário para upload do SARIF
+  actions: read
+
+jobs:
+
+  # ─────────────────────────────────────────────
+  # JOB 1 — SAST com Semgrep
+  # ─────────────────────────────────────────────
+  sast-semgrep:
+    name: "SAST — Semgrep"
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+
+    container:
+      image: semgrep/semgrep  # imagem oficial com semgrep pré-instalado
+
+    steps:
+      - name: "Checkout do código"
+        uses: actions/checkout@v4
+
+      - name: "Rodar Semgrep (regras auto + regra customizada)"
+        run: |
+          semgrep scan \
+            --config auto \
+            --config .semgrep/rules/python-logging.yml \
+            --sarif \
+            --output semgrep-results.sarif \
+            --verbose
+        # --config auto   → Semgrep detecta a linguagem e aplica regras da comunidade
+        # --config <path> → aplica sua regra customizada em cima
+        # --sarif         → gera saída no formato SARIF (padrão de segurança)
+
+      - name: "Publicar resultados na aba Security do GitHub"
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()  # roda mesmo se o step anterior falhar
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep-sast
+
+      - name: "Salvar SARIF como artefato"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-sarif
+          path: semgrep-results.sarif
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # JOB 2 — SCA com FOSSA
+  # ─────────────────────────────────────────────
+  sca-fossa:
+    name: "SCA — FOSSA"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout do código"
+        uses: actions/checkout@v4
+
+      - name: "Analisar dependências e enviar para FOSSA"
+        uses: fossas/fossa-action@v1
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          # O FOSSA detecta automaticamente: requirements.txt, Pipfile,
+          # pyproject.toml, setup.py, etc.
+
+      - name: "Verificar compliance de licenças e vulnerabilidades"
+        uses: fossas/fossa-action@v1
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          run-tests: true
+          # run-tests: true → executa `fossa test`, que consulta
+          # as políticas configuradas na sua conta FOSSA e falha
+          # o job se alguma violação for encontrada
