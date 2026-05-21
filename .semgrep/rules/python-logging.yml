@@ -3,9 +3,7 @@
 rules:
   - id: python-use-logger-not-print
     message: >
-      Uso de `$FUNC(...)` detectado. Substitua por um logger estruturado:
-      `import logging; logger = logging.getLogger(__name__); logger.info(...)`
-      O uso de print() em produção dificulta rastreamento, níveis de severidade e integração com sistemas de observabilidade.
+      Uso de Print Detectado, por favor use Loggin.
     languages:
       - python
     severity: WARNING
