@@ -1,1 +1,33 @@
 
+# .semgrep/rules/python-logging.yml
+rules:
+  - id: python-use-logger-not-print
+    message: >
+      Uso de `$FUNC(...)` detectado. Substitua por um logger estruturado:
+      `import logging; logger = logging.getLogger(__name__); logger.info(...)`
+      O uso de print() em produção dificulta rastreamento, níveis de severidade e integração com sistemas de observabilidade.
+    languages:
+      - python
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: print(...)
+          - pattern: pprint.pprint(...)
+          - pattern: pprint(...)
+          - pattern: pp(...)
+    paths:
+      exclude:
+        - tests/**
+        - "**/test_*.py"
+        - "**/*_test.py"
+        - scripts/**
+    metadata:
+      category: best-practice
+      technology:
+        - python
+      confidence: HIGH
+      impact: LOW
+      likelihood: MEDIUM
+      references:
+        - https://docs.python.org/3/library/logging.html
+        - https://12factor.net/logs
