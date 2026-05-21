@@ -87,6 +87,7 @@ def login(data: LoginRequest):
             return {"message": "Login realizado com sucesso"}
         else:
             login_errors += 1
+            print("Falhou")
             LOGGER.warning(f"O usuário {data.username} falhou no login")
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
